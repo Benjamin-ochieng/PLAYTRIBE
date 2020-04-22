@@ -11,6 +11,8 @@ var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"))
 
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
 
+var _slicedToArray2 = _interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));
+
 var _jsonwebtoken = _interopRequireDefault(require("jsonwebtoken"));
 
 var _config = _interopRequireDefault(require("../config"));
@@ -32,6 +34,28 @@ var verifyToken = function verifyToken(token) {
       if (err) return reject(err);
       resolve(payload);
     });
+  });
+};
+
+var setCookies = function setCookies(res, token) {
+  // const cookies = []
+  var _token$split = token.split('.'),
+      _token$split2 = (0, _slicedToArray2["default"])(_token$split, 3),
+      header = _token$split2[0],
+      payload = _token$split2[1],
+      signature = _token$split2[2];
+
+  res.cookie('signedToken', "".concat(header, ".").concat(signature), {
+    // domain: "",
+    secure: true,
+    httpOnly: true,
+    sameSite: true
+  });
+  res.cookie('token', "".concat(payload), {
+    // domain: "",
+    secure: true,
+    httpOnly: true,
+    sameSite: true
   });
 };
 
@@ -57,25 +81,26 @@ var signUp = /*#__PURE__*/function () {
           case 5:
             user = _context.sent;
             token = createToken(user);
+            setCookies(res, token);
             res.status(200).send({
-              token: token
+              message: 'You are signed up!'
             });
-            _context.next = 13;
+            _context.next = 14;
             break;
 
-          case 10:
-            _context.prev = 10;
+          case 11:
+            _context.prev = 11;
             _context.t0 = _context["catch"](2);
             res.status(409).send({
               Error: 'Email address already in use'
             });
 
-          case 13:
+          case 14:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[2, 10]]);
+    }, _callee, null, [[2, 11]]);
   }));
 
   return function signUp(_x, _x2) {
@@ -120,8 +145,9 @@ var signIn = /*#__PURE__*/function () {
               });
             } else {
               token = createToken(user);
+              setCookies(res, token);
               res.status(200).send({
-                token: token
+                message: 'Signed In'
               });
             }
 
@@ -172,12 +198,12 @@ var protect = /*#__PURE__*/function () {
           case 5:
             _context3.prev = 5;
             token = header.split(' ')[1];
-            _context3.next = 9;
+            console.log(token);
+            _context3.next = 10;
             return verifyToken(token);
 
-          case 9:
+          case 10:
             payload = _context3.sent;
-            console.log(payload);
             _context3.next = 13;
             return _user.User.findOne({
               _id: payload.id

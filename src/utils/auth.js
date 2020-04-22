@@ -18,6 +18,24 @@ const verifyToken = (token) => {
   })
 }
 
+const setCookies = (res, token) => {
+  // const cookies = []
+  const [header, payload, signature] = token.split('.')
+  res.cookie('signedToken', `${header}.${signature}`, {
+    // domain: "",
+    secure: true,
+    httpOnly: true,
+    sameSite: true,
+  })
+
+  res.cookie('token', `${payload}`, {
+    // domain: "",
+    secure: true,
+    httpOnly: true,
+    sameSite: true,
+  })
+}
+
 export const signUp = async (req, res) => {
   const { email, password } = req.body
   if (!email || !password)
@@ -25,7 +43,8 @@ export const signUp = async (req, res) => {
   try {
     const user = await User.create({ email, password })
     const token = createToken(user)
-    res.status(200).send({ token })
+    setCookies(res, token)
+    res.status(200).send({ message: 'You are signed up!' })
   } catch (err) {
     res.status(409).send({ Error: 'Email address already in use' })
   }
@@ -43,7 +62,8 @@ export const signIn = async (req, res) => {
       res.status(401).send({ message: 'Invalid username or password' })
     } else {
       const token = createToken(user)
-      res.status(200).send({ token })
+      setCookies(res, token)
+      res.status(200).send({ message: 'Signed In' })
     }
   } catch (err) {
     console.error(err)
@@ -58,8 +78,8 @@ export const protect = async (req, res, next) => {
   } else {
     try {
       const token = header.split(' ')[1]
+      console.log(token)
       const payload = await verifyToken(token)
-      console.log(payload)
       const user = await User.findOne({ _id: payload.id })
         .select('-password')
         .lean()
